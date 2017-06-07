@@ -5,6 +5,6 @@
 
 set -e
 
-docker build -t playmusic .
+docker build -t playmusic -f Dockerfile.arm .
 
-docker run -it -e GOOGLE_EMAIL=$GOOGLE_EMAIL -e GOOGLE_PASSWORD=$GOOGLE_PASSWORD -p 8080 --network host playmusic
+docker run -v $(pwd):/workdir -it -e GOOGLE_EMAIL=$GOOGLE_EMAIL -e GOOGLE_PASSWORD=$GOOGLE_PASSWORD -p 8080 --network host playmusic
