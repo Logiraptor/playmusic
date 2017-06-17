@@ -76,9 +76,6 @@ const App = observer(class extends Component {
           </select>
         </p>
         <div>
-          {JSON.stringify(this.props.store.searchResults, null, 4)}
-        </div>
-        <div>
           {songList}
         </div>
       </div >
