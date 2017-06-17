@@ -1,0 +1,19 @@
+sudo: required
+services:
+- docker
+
+before_script:
+- docker run --rm -v $(pwd)/client:/work -w /work node npm install
+- docker run --rm -v $(pwd)/client:/work -w /work node npm run build
+
+after_script:
+- docker run --rm -e GOPATH=/gp -e GOARCH=arm -v $(pwd):/gp/src/pm -w /gp/src/pm golang:1.8 go build -o playmusic
+- zip arm-release.zip .
+
+deploy:
+  provider: releases
+  api_key:
+    secure: QNyDkBSr+fJ3vsZqgvEiHLyg17vQyrYP9DjGL/YIOo+R2RzLaa5xHqHfS4VxJKCPgJozR8utHaVIYrBVnEvWvNLHzxNgf+z+0zjiWKlQAJI8lCO/bSGglpS1/T99bMUSaqx9h7FIiXZfzWclG7GQFdO9lITyxpuSPMzWZbovqKuganl9tQu9XKD/dA4NZO/oFRVTJ+/lGXMrATAbsULIVsMuONXawFL1ATwsBuKGAbxVXsUmgCA33G4Kws+b111dCn0aiaR4jXStauNWg/aBiYpgloOKpd4mdyn++Cz7FiSfxt+S/4LmQ8o73pga1+B4ZyxezbhEhX2NcJrr5BRHwLit0H+DOqJITAIlS+BWllfUXdZRWNP7iuLPSU7VN/WHFTq0NByuM7DqH2NLyBwnFVH/ufKFFvrr3VD9yA22l7hUAEmv3Fz49bw5AQszLMOHPOwwx38UYs6/XNW7B5nDpA6xh2oj0T+EHSYX3slZ6uTzpnDzyPSV/kNE0OyRs89cwbEzp63lMKt2vuTEvcQBxjjA8y11IBxJP04+OUvkloF+hwlem5r8jGJN/1ZzOQbLSC2otPN05pDClw4aEIvZvWrDKd7c7VUA3go5Y5s4EyOAQOxeu898EukFMSanBCKI6mkqQ8nkRjpPHK/JNaQjELIABlHrz3QDh+MDc7ChUjQ=
+  file: arm-release.zip
+  on:
+    repo: Logiraptor/playmusic
