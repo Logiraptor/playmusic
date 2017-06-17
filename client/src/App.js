@@ -32,7 +32,7 @@ const App = observer(class extends Component {
 
   async refreshData() {
     this.props.store.songs = await this.props.service.listSongs()
-    this.props.store.searchResults = await this.props.service.search("Kendrick Lamar")
+    // this.props.store.searchResults = await this.props.service.search("Kendrick Lamar")
     let speakers = await this.props.service.listSpeakers()
 
     this.props.store.speakers = speakers;
