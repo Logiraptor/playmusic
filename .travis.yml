@@ -9,7 +9,7 @@ before_script:
 script:
 - docker run --rm -e GOPATH=/gp -e GOARCH=arm -v $(pwd):/gp/src/pm -w /gp/src/pm golang:1.8 go build -o playmusic
 
-after_script:
+before_deploy:
 - zip -r arm-release.zip main.go main.py client/build
 
 deploy:
