@@ -9,13 +9,28 @@
     "react-dom": "^15.5.4"
   },
   "devDependencies": {
-    "create-react-app": "^1.3.1",
-    "react-scripts": "^1.0.7"
+    "@types/chai": "^4.0.0",
+    "@types/mocha": "^2.2.41",
+    "@types/react": "^15.0.29",
+    "@types/react-dom": "^15.5.0",
+    "awesome-typescript-loader": "^3.1.3",
+    "chai": "^4.0.2",
+    "css-loader": "^0.28.4",
+    "extract-text-webpack-plugin": "^2.1.2",
+    "file-loader": "^0.11.2",
+    "html-webpack-plugin": "^2.28.0",
+    "mocha": "^3.4.2",
+    "source-map-loader": "^0.2.1",
+    "ts-node": "^3.0.6",
+    "typemoq": "^1.7.0",
+    "typescript": "^2.3.4",
+    "typings": "^2.1.1",
+    "url-loader": "^0.5.9",
+    "webpack": "^3.0.0"
   },
   "scripts": {
-    "start": "PORT=8080 react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test --env=jsdom",
-    "eject": "react-scripts eject"
+    "build": "webpack",
+    "test": "mocha -r ts-node/register test/*.ts test/*.tsx",
+    "test-auto": "mocha -r ts-node/register test/*.ts test/*.tsx --watch --watch-extensions=ts,tsx"
   }
 }
