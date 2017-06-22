@@ -7,11 +7,7 @@ import (
 	"net/url"
 	"os"
 
-	"os/exec"
-
-	"io/ioutil"
-
-	"strings"
+	"encoding/json"
 
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
@@ -35,8 +31,13 @@ func main() {
 	proxy := handlers.LoggingHandler(os.Stdout, sameHost(httputil.NewSingleHostReverseProxy(url)))
 	fs := http.FileServer(http.Dir("client/build"))
 
+	q := &queueServer{}
+
 	r := mux.NewRouter()
 	r.PathPrefix("/api/").Handler(proxy)
+	r.PathPrefix("/queue/list").HandlerFunc(httpWithError(q.List))
+	r.PathPrefix("/queue/add").HandlerFunc(httpWithError(q.Add))
+	r.PathPrefix("/queue/play").HandlerFunc(httpWithError(q.Play))
 	r.PathPrefix("/").Handler(fs)
 
 	port := os.Getenv("PORT")
@@ -47,21 +48,46 @@ func main() {
 	http.ListenAndServe("0.0.0.0:"+port, handlers.LoggingHandler(os.Stdout, r))
 }
 
-func apiServer() {
-	buf, err := ioutil.ReadFile(".env")
-	if err != nil {
-		fmt.Println("Cannot read .env")
-		fmt.Println(err)
-		return
+func httpWithError(handler func(rw http.ResponseWriter, req *http.Request) error) http.HandlerFunc {
+	return func(rw http.ResponseWriter, req *http.Request) {
+		err := handler(rw, req)
+		if err != nil {
+			http.Error(rw, err.Error(), http.StatusInternalServerError)
+		}
 	}
+}
 
-	envlines := strings.Split(string(buf), "\n")
+type queueServer struct {
+}
 
-	cmd := exec.Command("flask", "run", "-p", "9999")
-	cmd.Env = append(envlines, "FLASK_APP=main.py")
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	err = cmd.Run()
-	fmt.Println("API SERVER STOPPED")
-	fmt.Println(err)
+func (q *queueServer) List(rw http.ResponseWriter, req *http.Request) error {
+	return withState(func(a *AppState) error {
+		return json.NewEncoder(rw).Encode(a)
+	})
+}
+
+func (q *queueServer) Add(rw http.ResponseWriter, req *http.Request) error {
+	var s Song
+	err := json.NewDecoder(req.Body).Decode(&s)
+	if err != nil {
+		return err
+	}
+	return withState(func(a *AppState) error {
+		a.Queue = append(a.Queue, s)
+		return json.NewEncoder(rw).Encode(struct{}{})
+	})
+}
+
+func (q *queueServer) Play(rw http.ResponseWriter, req *http.Request) error {
+	var s struct {
+		Index int `json:"index"`
+	}
+	err := json.NewDecoder(req.Body).Decode(&s)
+	if err != nil {
+		return err
+	}
+	return withState(func(a *AppState) error {
+		a.Position = s.Index
+		return json.NewEncoder(rw).Encode(struct{}{})
+	})
 }

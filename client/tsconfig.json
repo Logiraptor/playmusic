@@ -3,9 +3,9 @@
         "outDir": "./dist/",
         "target": "es5",
         "noImplicitAny": true,
+        "strictNullChecks": true,
         "lib": [
-            "es2015.promise",
-            "es5",
+            "es6",
             "dom"
         ],
         "experimentalDecorators": true,

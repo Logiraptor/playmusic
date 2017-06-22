@@ -1,16 +1,16 @@
 
 import os
 import json
-import time
 import inspect
-import soco
 from gmusicapi import Mobileclient
 from flask import Flask, jsonify, request
+import soco
+from soco.data_structures import DidlMusicTrack, DidlResource
 
-app = Flask(__name__)
+APP = Flask(__name__)
 
-mm = Mobileclient()
-mm.login(
+MM = Mobileclient()
+MM.login(
     os.getenv('GOOGLE_EMAIL'),
     os.getenv('GOOGLE_PASSWORD'),
     Mobileclient.FROM_MAC_ADDRESS
@@ -36,17 +36,17 @@ def auto(f):
 
     endpoint.func_name = "{}endpoint".format(f.func_name)
 
-    return app.route(route, methods=methods)(endpoint)
+    return APP.route(route, methods=methods)(endpoint)
 
 
 @auto
 def list_songs():
-    return mm.get_all_songs()
+    return MM.get_all_songs()
 
 
 @auto
 def list_stations():
-    return mm.get_all_stations()
+    return MM.get_all_stations()
 
 
 @auto
@@ -57,7 +57,7 @@ def speakers():
 
 @auto
 def play(songID, ip):
-    stream_uri = mm.get_stream_url(songID)
+    stream_uri = MM.get_stream_url(songID)
     stream_uri = stream_uri.replace("https:", "x-rincon-mp3radio:")
     soco.SoCo(ip).play_uri(stream_uri)
     return {}
@@ -65,25 +65,66 @@ def play(songID, ip):
 
 @auto
 def get_stream_url(songID):
-    stream_uri = mm.get_stream_url(songID)
-    stream_uri = stream_uri.replace("https:", "x-rincon-mp3radio:")
+    stream_uri = MM.get_stream_url(songID)
     return stream_uri
 
 
 @auto
-def play_uri(uri, ip):
-    soco.SoCo(ip).play_uri(uri)
+def play_from_queue(ip, index):
+    soco.SoCo(ip).play_from_queue(index)
     return {}
 
 
 @auto
+def play_uri(uri, duration, title, id, artist, album, album_art, ip):
+    res = [DidlResource(uri=uri, duration=duration,
+                        protocol_info="http-get:*:audio/mp3:*")]
+    didl = DidlMusicTrack(title=title,
+                          parent_id="DUMMY",
+                          item_id=id,
+                          resources=res,
+                          creator=artist,
+                          album=album,
+                          album_art_uri=album_art,
+                          description=id)
+
+    device = soco.SoCo(ip)
+    device.clear_queue()
+    i = device.add_to_queue(didl) - 1
+    device.play_from_queue(i)
+    return [uri, title, id, artist, album, ip]
+
+
+@auto
 def get_queue(ip):
-    return soco.SoCo(ip).get_queue()
+    return []
 
 
 @auto
 def get_current_track_info(ip):
-    return soco.SoCo(ip).get_current_track_info()
+    results = {}
+    current_track = soco.SoCo(ip).avTransport.GetPositionInfo([
+        ('InstanceID', 0),
+        ('Channel', 'Master')
+    ])
+    results.update(current_track)
+
+    speaker_state = soco.SoCo(ip).get_current_transport_info()
+    results.update(speaker_state)
+
+    return results
+
+
+@auto
+def pause(ip):
+    soco.SoCo(ip).pause()
+    return {}
+
+
+@auto
+def resume(ip):
+    soco.SoCo(ip).play()
+    return {}
 
 
 @auto
@@ -95,8 +136,8 @@ def volume(volume, ip):
 
 @auto
 def search(query):
-    return mm.search(query)
+    return MM.search(query)
 
 
 if __name__ == "__main__":
-    app.run()
+    APP.run()

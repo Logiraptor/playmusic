@@ -23,3 +23,7 @@ yarn-error.log*
 *.pyc
 
 .env
+
+state.json
+
+gin-bin

@@ -1,0 +1,13 @@
+[Unit]
+Description=Home Music Controller
+After=network.target
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/home/pi/playmusic
+ExecStart=/home/pi/playmusic/playmusic
+Restart=on-abort
+
+[Install]
+WantedBy=multi-user.target

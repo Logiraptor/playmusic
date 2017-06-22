@@ -4,81 +4,29 @@ import { Speaker, SpeakerService } from './SpeakerService';
 import { MusicService } from './MusicService';
 import { observable, computed } from 'mobx';
 import { observer } from 'mobx-react'
-import * as logo from './logo.svg';
+import Song from './Song';
+import { Player } from './Player';
+import logo from './logo.svg';
 
-class Song {
-  id: string
-  title: string
-  albumArtRef: { url: string }[]
-}
-
-
-class Store {
-  @observable favorites: Song[] = []
-  @observable speakers: Speaker[] = []
-  @observable selectedIP: string = ""
-  @observable volume: number = 0
-  @observable searchResults: {} = {}
-  @observable currentTrack: {} = {}
-
-  @computed get selectedSpeaker(): Speaker {
-    return this.speakers.filter(x => x.ip == this.selectedIP)[0]
-  }
-}
-
-class Player {
-  store: Store = new Store();
-
-  constructor(private speakers: SpeakerService, private music: MusicService) {
-    setInterval(async () => {
-      if (this.store.selectedIP) {
-        this.store.currentTrack = await this.speakers.currentTrack(this.store.selectedSpeaker)
-      }
-    }, 1000)
-  }
-
-  async refresh() {
-    this.store.favorites = await this.music.listFavorites()
-    this.store.searchResults = await this.music.search("Kendrick Lamar")
-    let speakers = await this.speakers.listSpeakers()
-
-    this.store.speakers = speakers;
-    this.store.selectedIP = speakers[0].ip;
-    this.store.volume = speakers[0].volume;
-  }
-
-  async play(id: string) {
-    let uri = await this.music.getURI(id);
-    return this.speakers.playURI(uri, this.store.selectedSpeaker);
-  }
-
-  volume(level: number) {
-    this.speakers.volume(level, this.store.selectedSpeaker)
-    this.store.volume = level;
-  }
-}
-
-const speakers = new SpeakerService();
-const music = new MusicService()
-const player = new Player(speakers, music)
-player.refresh()
-
+class StatelessComponent<Props> extends React.Component<Props, void> { }
 
 interface AppProps {
-  player?: Player
+  player: Player
 }
 
 @observer
-export default class App extends React.Component<AppProps, {}> {
+export default class App extends StatelessComponent<AppProps> {
 
-  static defaultProps: Partial<AppProps> = {
-    player: player
-  }
-
-  render(): JSX.Element {
-    let songList: JSX.Element[] = this.props.player.store.favorites.map(song => {
+  render() {
+    let songList: JSX.Element[] = this.props.player.store.favorites.map((song, i) => {
       return (
-        <SongTile song={song} player={this.props.player} />
+        <SongRow key={i} song={song} onClick={() => this.props.player.play(song.id)} />
+      )
+    })
+
+    let queueList: JSX.Element[] = this.props.player.store.queue.map((song, i) => {
+      return (
+        <SongRow key={i} song={song} onClick={() => this.props.player.playFromQueue(i)} />
       )
     })
 
@@ -91,8 +39,8 @@ export default class App extends React.Component<AppProps, {}> {
     return (
       <div className="App">
         <div className="App-header">
-          <img src={logo} className="App-logo" alt="logo" />
-          <h2>Sonos Controller</h2>
+          <MediaControls
+            player={this.props.player} />
         </div>
         <p>
           Volume:
@@ -112,10 +60,12 @@ export default class App extends React.Component<AppProps, {}> {
             {speakerList}
           </select>
         </p>
-        <div>
-          {JSON.stringify(this.props.player.store.currentTrack)}
+        <div className="panel scrollable">
+          <h2>Queue</h2>
+          {queueList}
         </div>
-        <div>
+        <div className="panel wide scrollable">
+          <h2>Favorites</h2>
           {songList}
         </div>
       </div>
@@ -124,16 +74,64 @@ export default class App extends React.Component<AppProps, {}> {
 }
 
 @observer
-class SongTile extends React.Component<{ song: Song, player: Player }, {}> {
-  render(): JSX.Element {
+class MediaControls extends StatelessComponent<{ player: Player }> {
+  render() {
+    let song = this.props.player.store.currentTrack;
+    if (song) {
+
+      let playPauseButton;
+
+      if (this.props.player.store.status == "PLAYING") {
+        playPauseButton = (
+          <button onClick={() => this.props.player.setState("paused")}>Pause</button>
+        )
+      } else if (this.props.player.store.status == "PAUSED_PLAYBACK") {
+        playPauseButton = (
+          <button onClick={() => this.props.player.setState("playing")}>Play</button>
+        )
+      }
+
+      return (
+        <div>
+          <img src={song.album_art} className="App-logo" alt="logo" />
+          <h3>{song.artist} - {song.title} ({this.props.player.store.progress} / {this.props.player.store.duration})</h3>
+
+          {playPauseButton}
+
+        </div>
+      )
+    }
+    return (
+      <div>
+        <img src={logo} className="App-logo" alt="logo" />
+        <h3>Music</h3>
+      </div>
+    );
+  }
+}
+
+@observer
+class SongRow extends StatelessComponent<{ song: Song, onClick: () => void }> {
+  render() {
+    return (
+      <div className="song-row" onClick={this.props.onClick}>
+        <img src={this.props.song.album_art} alt={this.props.song.title} />
+        <h3>{this.props.song.artist}</h3>
+        <h3>{this.props.song.album}</h3>
+        <h3>{this.props.song.title}</h3>
+      </div>
+    );
+  }
+}
+
+@observer
+class SongTile extends StatelessComponent<{ song: Song, onClick: () => void }> {
+  render() {
     const song = this.props.song;
     return (
-      <div
-        onClick={() => this.props.player.play(song.id)}
-        style={{ display: "inline-block", padding: "10px" }}
-      >
+      <div style={{ display: "inline-block", padding: "10px" }}>
         <h3>{song.title} </h3>
-        < img src={song.albumArtRef[0].url} alt={song.title} width="250" height="250" />
+        <img src={song.album_art} alt={song.title} width="250" height="250" />
       </div>
     )
   }
