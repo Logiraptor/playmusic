@@ -12,6 +12,10 @@ export class QueueService extends WebService {
         return await this.get("/queue/list")
     }
 
+    async clear() {
+        return await this.get("/queue/clear")
+    }
+
     async enqueue(song: Song) {
         return await this.post("/queue/add", song)
     }

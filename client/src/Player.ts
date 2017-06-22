@@ -4,6 +4,7 @@ import { MusicService } from './MusicService';
 import { Speaker, SpeakerService, Status } from './SpeakerService';
 import { QueueService } from './QueueService';
 import { observable, computed } from 'mobx'
+import { SearchResults } from './Search';
 
 
 class Map<T> {
@@ -33,11 +34,13 @@ export class Store {
     @observable songs: Map<Song> = new Map<Song>();
     @observable queueIds: string[] = []
     @observable favoriteIds: string[] = []
+    @observable searchResultSongIds: string[] = []
 
     @observable status: Status
     @observable speakers: Speaker[] = []
     @observable selectedIP: string = ""
     @observable volume: number = 0
+    @observable queuePosition: number = -1;
     @observable progress: string = ""
     @observable duration: string = ""
 
@@ -61,12 +64,15 @@ export class Store {
         return this.favoriteIds.map(id => this.songs.find(id))
     }
 
+    @computed get searchResults(): SearchResults {
+        return {
+            song_hits: this.searchResultSongIds.map(id => this.songs.find(id))
+        }
+    }
+
     @computed get selectedSpeaker(): Speaker {
         return this.speakers.filter(x => x.ip == this.selectedIP)[0]
     }
-
-    // TODO: fill in these types
-    @observable searchResults: {} = {}
 }
 
 export class Player {
@@ -82,6 +88,7 @@ export class Player {
                 this.store.progress = currentTrack.progress;
                 this.store.duration = currentTrack.duration;
                 this.store.status = currentTrack.status;
+                this.store.queuePosition = queue.position;
 
                 if (currentTrack.status == "STOPPED" &&
                     this.store.queueIds.length > queue.position + 1) {
@@ -101,7 +108,6 @@ export class Player {
 
     async refresh() {
         this.store.favoriteIds = this.store.addSongs(await this.music.listFavorites())
-        this.store.searchResults = await this.music.search("Kendrick Lamar")
         let speakers = await this.speakers.listSpeakers()
 
         let queue = await this.queue.queue()
@@ -114,7 +120,8 @@ export class Player {
 
     async play(id: string) {
         let song = this.store.songs.find(id);
-        return await this.queue.enqueue(song);
+        await this.queue.enqueue(song);
+        this.store.queueIds.push(id);
     }
 
     async playFromQueue(i: number) {
@@ -123,6 +130,14 @@ export class Player {
         song.uri = await this.music.getURI(selectedID);
         await this.queue.play(i);
         return await this.speakers.play(song, this.store.selectedSpeaker);
+    }
+
+    async clearQueue() {
+        return await this.queue.clear()
+    }
+
+    async search(query: string) {
+        this.store.searchResultSongIds = this.store.addSongs((await this.music.search(query)).song_hits);
     }
 
     async setState(state: "playing" | "paused") {

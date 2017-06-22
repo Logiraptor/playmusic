@@ -5,7 +5,6 @@ import { Player } from './Player';
 import { SpeakerService } from './SpeakerService';
 import { MusicService } from './MusicService';
 import { QueueService } from './QueueService';
-// import './index.css';
 
 let container = document.createElement('div');
 document.body.appendChild(container);

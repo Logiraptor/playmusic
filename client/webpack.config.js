@@ -22,6 +22,7 @@ module.exports = {
             { test: /\.tsx?$/, loader: "awesome-typescript-loader" },
             { test: /\.(png|jpg|svg)$/, loader: 'url-loader', options: { limit: 25000 } },
             { test: /\.css/, loader: ExtractTextPlugin.extract('css-loader') },
+            { test: /\.scss/, loader: ExtractTextPlugin.extract({ use: [{ loader: 'css-loader' }, { loader: 'sass-loader' }] }) },
             // All output '.js' files will have any sourcemaps re-processed by 'source-map-loader'.
             { enforce: "pre", test: /\.js$/, loader: "source-map-loader" }
         ]

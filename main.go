@@ -37,6 +37,7 @@ func main() {
 	r.PathPrefix("/api/").Handler(proxy)
 	r.PathPrefix("/queue/list").HandlerFunc(httpWithError(q.List))
 	r.PathPrefix("/queue/add").HandlerFunc(httpWithError(q.Add))
+	r.PathPrefix("/queue/clear").HandlerFunc(httpWithError(q.Clear))
 	r.PathPrefix("/queue/play").HandlerFunc(httpWithError(q.Play))
 	r.PathPrefix("/").Handler(fs)
 
@@ -75,6 +76,14 @@ func (q *queueServer) Add(rw http.ResponseWriter, req *http.Request) error {
 	return withState(func(a *AppState) error {
 		a.Queue = append(a.Queue, s)
 		return json.NewEncoder(rw).Encode(struct{}{})
+	})
+}
+
+func (q *queueServer) Clear(rw http.ResponseWriter, req *http.Request) error {
+	return withState(func(a *AppState) error {
+		a.Queue = []Song{}
+		a.Position = -1
+		return json.NewEncoder(rw).Encode(a)
 	})
 }
 

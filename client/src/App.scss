@@ -1,0 +1,117 @@
+@import "reset.css";
+
+.App {
+  text-align: center;
+}
+
+.App-logo {
+  height: 80px;
+}
+
+.App-header {
+  background-color: #222;
+  padding: 20px;
+  color: white;
+}
+
+.App-intro {
+  font-size: large;
+}
+
+@mixin scrollable() {
+  overflow-y: auto;
+
+  &::-webkit-scrollbar-track {
+    -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.3);
+    background-color: #F5F5F5;
+  }
+
+  &::-webkit-scrollbar {
+    width: 6px;
+    background-color: #F5F5F5;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background-color: #000000;
+  }
+}
+
+.panel {
+  @include scrollable();
+
+  width: 40%;
+  float: left;
+  max-height: 100vh;
+  &.wide {
+    width: 50%;
+  }
+}
+
+
+.song-row {
+  text-align: left;
+  
+  &:hover {
+    background-color: #eee;
+    text-align: left;
+  }
+  img {
+    margin: 10px;
+    height: 75px;
+    width: 75px;
+    vertical-align: middle;
+  }
+  h3 {
+    margin: 0 10px;
+    display: inline-block;
+  }
+}
+
+
+@keyframes current-song-flash {
+  0% {color: hsl(0, 100%, 50%);}
+  10% {color: hsl(50, 100%, 50%);}
+  20% {color: hsl(100, 100%, 50%);}
+  30% {color: hsl(150, 100%, 50%);}
+  40% {color: hsl(200, 100%, 50%);}
+  50% {color: hsl(255, 100%, 50%);}
+  60% {color: hsl(200, 100%, 50%);}
+  70% {color: hsl(150, 100%, 50%);}
+  80% {color: hsl(100, 100%, 50%);}
+  90% {color: hsl(50, 100%, 50%);}
+  100% {color: hsl(0, 100%, 50%);}
+}
+
+.queue.box {
+  float: left;  
+  text-align: left;
+  width: 400px;
+  height: 300px;
+
+  @include scrollable();
+
+  .row {
+    padding: 5px;
+    cursor: pointer;
+
+    &:hover {
+      color: #ccc;
+    }
+    &.current {
+      animation-name: current-song-flash;
+      animation-duration: 5s;
+      animation-iteration-count: infinite;
+    }
+    .field {
+      padding: 5px;
+    }
+  }
+}
+
+.media-controls {
+  float: left;
+}
+
+.clear {
+  clear: both;
+}

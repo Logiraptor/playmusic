@@ -1,5 +1,5 @@
 import * as React from 'react';
-import './App.css';
+import './App.scss';
 import { Speaker, SpeakerService } from './SpeakerService';
 import { MusicService } from './MusicService';
 import { observable, computed } from 'mobx';
@@ -7,6 +7,7 @@ import { observer } from 'mobx-react'
 import Song from './Song';
 import { Player } from './Player';
 import logo from './logo.svg';
+import { SearchResults } from "./Search";
 
 class StatelessComponent<Props> extends React.Component<Props, void> { }
 
@@ -39,8 +40,9 @@ export default class App extends StatelessComponent<AppProps> {
     return (
       <div className="App">
         <div className="App-header">
-          <MediaControls
-            player={this.props.player} />
+          <QueuePanel player={this.props.player} />
+          <MediaControls player={this.props.player} />
+          <div className="clear"></div>
         </div>
         <p>
           Volume:
@@ -49,10 +51,7 @@ export default class App extends StatelessComponent<AppProps> {
             min="0"
             max="100"
             value={this.props.player.store.volume}
-            onChange={event => {
-              this.props.player.volume(parseInt(event.target.value))
-            }
-            } />
+            onChange={event => { this.props.player.volume(parseInt(event.target.value)) }} />
         </p>
         <p className="App-intro">
           Play on:
@@ -60,16 +59,73 @@ export default class App extends StatelessComponent<AppProps> {
             {speakerList}
           </select>
         </p>
-        <div className="panel scrollable">
-          <h2>Queue</h2>
-          {queueList}
-        </div>
-        <div className="panel wide scrollable">
-          <h2>Favorites</h2>
-          {songList}
+        <div>
+          <SearchView player={this.props.player} />
         </div>
       </div>
     );
+  }
+}
+
+class QueuePanel extends StatelessComponent<{ player: Player }> {
+
+  renderQueueRow(song: Song, i: number) {
+    let current = this.props.player.store.queuePosition == i;
+    return (
+      <tr key={i} onClick={() => this.props.player.playFromQueue(i)} className={current ? "current row" : "row"}>
+        <td className="field">{song.artist}</td>
+        <td className="field">{song.title}</td>
+        <td className="field">{song.duration}</td>
+      </tr>
+    )
+  }
+
+  render() {
+    let songs = this.props.player.store.queue;
+
+    let rows = songs.map(this.renderQueueRow.bind(this));
+
+    return (
+      <div className="queue box">
+        <button onClick={() => this.props.player.clearQueue()}>Clear</button>
+        <table>
+          <tbody>{rows}</tbody>
+        </table>
+      </div>
+    )
+  }
+}
+
+class SearchView extends StatelessComponent<{ player: Player }> {
+
+  renderResults(results: SearchResults) {
+    if (!results) {
+      return null;
+    }
+
+    let songRows = results.song_hits.map(song => (
+      <SongRow song={song} onClick={() => this.props.player.play(song.id)} />
+    ))
+
+    return (
+      <div>
+        {songRows}
+      </div>
+    )
+  }
+
+  render() {
+    return (
+      <div>
+        Search:
+        <input type="text" onKeyDown={(event) => {
+          if (event.key == "Enter") {
+            this.props.player.search(event.currentTarget.value);
+          }
+        }} />
+        {this.renderResults(this.props.player.store.searchResults)}
+      </div>
+    )
   }
 }
 
@@ -102,7 +158,7 @@ class MediaControls extends StatelessComponent<{ player: Player }> {
       )
     }
     return (
-      <div>
+      <div className="media-controls">
         <img src={logo} className="App-logo" alt="logo" />
         <h3>Music</h3>
       </div>

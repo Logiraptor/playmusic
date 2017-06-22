@@ -1,45 +1,7 @@
 
 import WebService from './WebService';
 import Song from './Song';
-
-export interface AlbumArtRef {
-    kind: string;
-    url: string;
-}
-
-export interface ArtistArtRef {
-    aspectRatio: string;
-    autogen: boolean;
-    kind: string;
-    url: string;
-}
-
-export interface PlayMusicSong {
-    album: string;
-    albumArtRef: AlbumArtRef[];
-    albumArtist: string;
-    albumId: string;
-    artist: string;
-    artistArtRef: ArtistArtRef[];
-    artistId: string[];
-    clientId: string;
-    creationTimestamp: string;
-    deleted: boolean;
-    discNumber: number;
-    durationMillis: string;
-    estimatedSize: string;
-    explicitType: string;
-    id: string;
-    kind: string;
-    lastModifiedTimestamp: string;
-    nid: string;
-    recentTimestamp: string;
-    storeId: string;
-    title: string;
-    trackNumber: number;
-    trackType: string;
-    year: number;
-}
+import { SearchResults, GMSearchResults, Track } from './Search'
 
 function millisToDuration(millisString: string): string {
     const MS = 1
@@ -56,30 +18,36 @@ function millisToDuration(millisString: string): string {
     return hours + ":" + ('0' + minutes).slice(-2) + ":" + ('0' + seconds).slice(-2);
 }
 
+function trackToSong(track: Track): Song {
+    return {
+        id: track.id || track.storeId,
+        album: track.album,
+        album_art: track.albumArtRef[0].url,
+        artist: track.albumArtist,
+        duration: millisToDuration(track.durationMillis),
+        metadata: "",
+        playlist_position: "",
+        position: "",
+        title: track.title,
+        uri: "",
+    }
+}
+
 export class MusicService extends WebService {
     async listFavorites(): Promise<Song[]> {
-        let songs: PlayMusicSong[] = await this.get("/api/list_songs")
-
-        return songs.map(song => ({
-            id: song.id,
-            album: song.album,
-            album_art: song.albumArtRef[0].url,
-            artist: song.albumArtist,
-            duration: millisToDuration(song.durationMillis),
-            metadata: "",
-            playlist_position: "",
-            position: "",
-            title: song.title,
-            uri: "",
-        }))
+        let songs: Track[] = await this.get("/api/list_songs")
+        return songs.map(trackToSong)
     }
 
     listStations() {
         return this.get("/api/list_stations")
     }
 
-    search(query: string) {
-        return this.post("/api/search", { query })
+    async search(query: string): Promise<SearchResults> {
+        let results: GMSearchResults = await this.post("/api/search", { query })
+        return {
+            song_hits: results.song_hits.map(x => trackToSong(x.track))
+        };
     }
 
     getURI(songID: string) {
