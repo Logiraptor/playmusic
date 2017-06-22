@@ -94,11 +94,9 @@ export class Player {
                     this.store.queueIds.length > queue.position + 1) {
                     await this.playFromQueue(queue.position + 1)
                 } else {
-                    if (currentTrack.id) {
-                        this.store.currentTrack = this.store.songs.findWhere(x => x.id === currentTrack.id)[0]
-                    } else {
-                        this.store.currentTrack = currentTrack;
-                    }
+                    let resolvedTrack = this.store.songs.findWhere(x => x.id === currentTrack.id)[0]
+                    if (!resolvedTrack) resolvedTrack = currentTrack;
+                    this.store.currentTrack = currentTrack;
                 }
             }
             setTimeout(loadCurrentTrack, 1000)
